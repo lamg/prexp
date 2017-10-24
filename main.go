@@ -17,7 +17,8 @@ func main() {
 	px := gp.NewProxyHttpServer()
 	px.Verbose = *verbose
 	px.Tr.DialContext = dialHTTP
-	log.Fatal(http.ListenAndServe(*addr, px))
+	p := &proxy{px}
+	log.Fatal(http.ListenAndServe(*addr, p))
 }
 
 type proxy struct {
@@ -28,10 +29,10 @@ type proxy struct {
 // of RemoteAddr value in context
 type RemoteAddr string
 
-func (p *proxy) serveHTTP(w http.ResponseWriter, r *http.Request) {
+func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	q := r.WithContext(context.WithValue(context.Background(),
 		RemoteAddr("RemoteAddress"), r.RemoteAddr))
-	p.serveHTTP(w, q)
+	p.px.ServeHTTP(w, q)
 }
 
 func dialHTTP(c context.Context, nt, ad string) (n net.Conn, e error) {
